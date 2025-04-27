@@ -72,48 +72,57 @@ def predict_bird_from_description(user_description, processor, model, device="cp
     top_matches = similarity_results[:top_k]
     return top_matches
 
-st.set_page_config(page_title="Amigo Flamingo", layout="wide")
 
-# Set the custom theme using CSS (Flemingo color theme)
-st.markdown("""
-    <style>
-    .stApp {
-        background-color: #f5b0b0; /* Light Flemingo color */
-    }
-    h1 {
-        color: #ff6f61; /* Primary color for the title */
-        font-family: 'Arial', sans-serif;
-    }
-    .stTextInput>div>div>input {
-        background-color: #ffe6e6; /* Light background for text input */
-    }
-    .stButton>button {
-        background-color: #ff6f61; /* Button color matching the title */
-        color: white;
-    }
-    .stButton>button:hover {
-        background-color: #ff4c38; /* Slightly darker color on hover */
-    }
-    </style>
-""", unsafe_allow_html=True)
+def main():
+    st.set_page_config(page_title="Amigo Flamingo", layout="wide")
 
-# Title of the app
-st.title("Amigo Flamingo")
+    # Set the custom theme using CSS (Flemingo color theme)
+    st.markdown("""
+        <style>
+        .stApp {
+            background-color: #f5b0b0; /* Light Flemingo color */
+        }
+        h1 {
+            color: #ff6f61; /* Primary color for the title */
+            font-family: 'Arial', sans-serif;
+        }
+        .stTextInput>div>div>input {
+            background-color: #ffe6e6; /* Light background for text input */
+        }
+        .stButton>button {
+            background-color: #ff6f61; /* Button color matching the title */
+            color: white;
+        }
+        .stButton>button:hover {
+            background-color: #ff4c38; /* Slightly darker color on hover */
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-# Example content
-st.header("Welcome to the Amigo Flamingo Bird Identification System!")
-st.write("Identify various bird species of Kerala with ease using this system!")
+    # Title of the app
+    st.title("Amigo Flamingo")
+
+    # Example content
+    st.header("Welcome to the Amigo Flamingo Bird Identification System!")
+    st.write("Identify various bird species of Kerala with ease using this system!")
 
 
-user_description = st.text_area("Describe the bird you saw:")
+    user_description = st.text_area("Describe the bird you saw:")
 
-if st.button("Identify Bird"):
-    if user_description:
-        with st.spinner("waiting"):
-            identified_birds = predict_bird_from_description(user_description, processor, model)
-            for result in identified_birds:
-                name = result[1].replace("_", " ").title()
-                img_path = result[2][0]
-                img_path = dowloadfile_and_return_temp_path(img_path)
-                st.subheader(name)
-                st.image(Image.open(img_path), caption=name)
+    if st.button("Identify Bird"):
+        if user_description:
+            with st.spinner("waiting"):
+                identified_birds = predict_bird_from_description(user_description, processor, model)
+                for result in identified_birds:
+                    name = result[1].replace("_", " ").title()
+                    img_path = result[2][0]
+                    img_path = dowloadfile_and_return_temp_path(img_path)
+                    st.subheader(name)
+                    st.image(Image.open(img_path), caption=name)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        st.error("Oops! Something went wrong. Please try again later.")
