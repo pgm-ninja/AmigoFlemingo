@@ -36,21 +36,14 @@ s3_client = boto3.client(
 
 
 # Load the Hugging Face CLIP model and processor
-# device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
 model = AutoModel.from_pretrained(
     "openai/clip-vit-base-patch32",
-    torch_dtype=torch.float32,
-    low_cpu_mem_usage=True,
-    device_map="cpu",
-    cache_dir="/tmp/huggingface"
-)
+    torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32
+).to(device)
 
-# Load processor
-processor = AutoProcessor.from_pretrained(
-    "openai/clip-vit-base-patch32",
-    cache_dir="/tmp/huggingface"
-)
-
+processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
 
 def dowloadfile_and_return_temp_path(file_path):
