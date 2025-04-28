@@ -41,10 +41,15 @@ model = AutoModel.from_pretrained(
     "openai/clip-vit-base-patch32",
     torch_dtype=torch.float32,
     low_cpu_mem_usage=True,
-    device_map="cpu"
+    device_map="cpu",
+    cache_dir="/tmp/huggingface"
 )
 
-processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
+# Load processor
+processor = AutoProcessor.from_pretrained(
+    "openai/clip-vit-base-patch32",
+    cache_dir="/tmp/huggingface"
+)
 
 
 
