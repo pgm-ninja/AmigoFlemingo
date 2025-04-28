@@ -45,7 +45,7 @@ def dowloadfile_and_return_temp_path(file_path):
 
 model = AutoModel.from_pretrained(
     "openai/clip-vit-base-patch32",
-    torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32
+    torch_dtype=torch.float32
 ).to("cpu")
 
 processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
