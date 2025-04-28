@@ -46,7 +46,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 model = AutoModel.from_pretrained(
     "openai/clip-vit-base-patch32",
     torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32
-).to_empty(device=device)
+).to(device=device)
 
 processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
