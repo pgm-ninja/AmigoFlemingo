@@ -134,7 +134,7 @@ def main():
 
 
 if __name__ == "__main__":
-    # try:
+    try:
         main()
-    # except Exception as e:
-    #     st.error("Oops! Something went wrong. Please try again later.")
+    except Exception as e:
+        st.error("Oops! Something went wrong. Please try again later.")
