@@ -10,7 +10,9 @@ import os
 from dotenv import load_dotenv
 
 
+
 load_dotenv()
+
 
 
 # AWS S3 credentials (you can set them as environment variables or in the AWS config)
@@ -18,6 +20,9 @@ aws_access_key = os.getenv('AWS_ACCESS_KEY_ID')
 aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 bucket_name = os.getenv('AWS_BUCKET_NAME')
 region_name = os.getenv('AWS_REGION')
+
+os.environ["HF_HOME"] = "/tmp/huggingface"
+os.environ["TRANSFORMERS_CACHE"] = "/tmp/huggingface"
 
 
 
@@ -30,6 +35,19 @@ s3_client = boto3.client(
 
 
 
+# Load the Hugging Face CLIP model and processor
+# device = "cuda" if torch.cuda.is_available() else "cpu"
+model = AutoModel.from_pretrained(
+    "openai/clip-vit-base-patch32",
+    torch_dtype=torch.float32,
+    low_cpu_mem_usage=True,
+    device_map="cpu"
+)
+
+processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
+
+
+
 def dowloadfile_and_return_temp_path(file_path):
     # Create a temporary directory to store the images
     with NamedTemporaryFile(delete=False) as tmpfile:
@@ -38,17 +56,6 @@ def dowloadfile_and_return_temp_path(file_path):
         # print(f"Downloaded {file_path} to {tmpfile.name}")
         return tmpfile.name
 
-
-
-# Load the Hugging Face CLIP model and processor
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-
-model = AutoModel.from_pretrained(
-    "openai/clip-vit-base-patch32",
-    torch_dtype=torch.float32
-).to("cpu")
-
-processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
 
 def predict_bird_from_description(user_description, processor, model, device="cpu", top_k=3):
