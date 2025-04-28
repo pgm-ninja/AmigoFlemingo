@@ -74,6 +74,7 @@ def predict_bird_from_description(user_description, processor, model, device="cp
 
 
 def main():
+    print('region -------------> ', region_name)
     st.set_page_config(page_title="Amigo Flamingo", layout="wide")
 
     # Set the custom theme using CSS (Flemingo color theme)
