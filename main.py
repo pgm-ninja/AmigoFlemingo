@@ -10,6 +10,9 @@ import os
 from dotenv import load_dotenv
 
 
+st.set_page_config(page_title="Amigo Flamingo", layout="wide")
+
+
 
 load_dotenv()
 
@@ -35,15 +38,25 @@ s3_client = boto3.client(
 
 
 
-# Load the Hugging Face CLIP model and processor
-device = "cuda" if torch.cuda.is_available() else "cpu"
+@st.cache_resource
+def load_model():
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
-model = AutoModel.from_pretrained(
-    "openai/clip-vit-base-patch32",
-    torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32
-).to(device)
+    st.spinner('Loading model... please wait!')  # Shows loading spinner
+    model = AutoModel.from_pretrained(
+        "openai/clip-vit-base-patch32",
+        torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+        device_map="auto",
+        low_cpu_mem_usage=True
+    )
 
-processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
+    processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
+    return model, processor
+
+
+
+model, processor = load_model()
+
 
 
 def dowloadfile_and_return_temp_path(file_path):
@@ -56,8 +69,14 @@ def dowloadfile_and_return_temp_path(file_path):
 
 
 
-def predict_bird_from_description(user_description, processor, model, device="cpu", top_k=3):
+def predict_bird_from_description(user_description, processor, model, device="cpu", falsely_predicted_birds=[], top_k=3):
+    # list of dictionary --> [{"name": "bird_name", "image_path": "path/to/image", "image_embedding": image_embedding}]
     bird_embeddings_ls = torch.load("bird_embeddings.pt")
+
+    if falsely_predicted_birds:
+        # Filter out the falsely predicted birds
+        bird_embeddings_ls = [bird for bird in bird_embeddings_ls if bird["name"] not in falsely_predicted_birds]
+
     # Step 1: Encode the user's description with processor
     text_inputs = processor(text=[user_description], return_tensors="pt", truncation=True, padding=True).to(device)
 
@@ -78,8 +97,37 @@ def predict_bird_from_description(user_description, processor, model, device="cp
     return top_matches
 
 
+
+def generate_result():
+    print('Generating results...')
+    if st.session_state.get("results"):
+        print('Result:', st.session_state.results)
+        with st.spinner("waiting"):
+            for result in st.session_state.results:
+                name = result[1].replace("_", " ").title()
+                img_path = result[2][0]
+                img_path = dowloadfile_and_return_temp_path(img_path)
+                st.subheader(name)
+                st.image(Image.open(img_path), caption=name)
+                st.session_state.prediction_log.append(result[1])
+            if st.session_state.get("prediction_log"):
+                st.session_state.results = predict_bird_from_description(st.session_state.input, processor, model, falsely_predicted_birds=st.session_state.prediction_log)
+
+
+def home_page():
+    st.header("Welcome to the Amigo Flamingo Bird Identification System!")
+    st.write("Identify various bird species of Kerala with ease using this system!")
+
+
+    user_description = st.text_area("Describe the bird you saw:")
+
+    if st.button("Identify Bird") and user_description:
+        st.session_state.input = user_description
+        st.session_state.results = predict_bird_from_description(user_description, processor, model)
+        st.session_state.feedback_visible = True
+
+
 def main():
-    st.set_page_config(page_title="Amigo Flamingo", layout="wide")
 
     # Set the custom theme using CSS (Flemingo color theme)
     st.markdown("""
@@ -104,30 +152,34 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
+
+
+    if "prediction_log" not in st.session_state:
+        st.session_state.prediction_log = []
+
     # Title of the app
     st.title("Amigo Flamingo")
 
-    # Example content
-    st.header("Welcome to the Amigo Flamingo Bird Identification System!")
-    st.write("Identify various bird species of Kerala with ease using this system!")
+    home_page()
 
 
-    user_description = st.text_area("Describe the bird you saw:")
+    if st.session_state.get("results") and st.session_state.get("regenerate_results", False) is False:
+        generate_result()
 
-    if st.button("Identify Bird"):
-        if user_description:
-            with st.spinner("waiting"):
-                identified_birds = predict_bird_from_description(user_description, processor, model)
-                for result in identified_birds:
-                    name = result[1].replace("_", " ").title()
-                    img_path = result[2][0]
-                    img_path = dowloadfile_and_return_temp_path(img_path)
-                    st.subheader(name)
-                    st.image(Image.open(img_path), caption=name)
+    if st.session_state.get("feedback_visible", False):
+        col1, col2 = st.columns(2)
+
+        with col1:
+            if st.button("🔁 Try Again"):
+                print("Try again")
+
+
+
+
 
 
 if __name__ == "__main__":
-    try:
+    # try:
         main()
-    except Exception as e:
-        st.error("Oops! Something went wrong. Please try again later.")
+    # except Exception as e:
+    #     st.error("Oops! Something went wrong. Please try again later.")
